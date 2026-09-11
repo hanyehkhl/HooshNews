@@ -1,0 +1,16 @@
+{
+  "rss_feeds": [
+    { "name": "OpenAI Blog", "url": "https://openai.com/news/rss.xml" },
+    { "name": "Google DeepMind Blog", "url": "https://deepmind.google/blog/rss.xml" },
+    { "name": "Anthropic News", "url": "https://www.anthropic.com/rss.xml" },
+    { "name": "Hugging Face Blog", "url": "https://huggingface.co/blog/feed.xml" },
+    { "name": "MIT Technology Review - AI", "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed" }
+  ],
+  "arxiv": {
+    "categories": ["cs.CL", "cs.AI", "cs.LG"],
+    "max_results": 25
+  },
+  "telegram_channels": [
+    "@your_persian_ai_newsletter_channel"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "date": "2026-09-11",
+  "generated_at": "2026-09-11T06:00:00Z",
+  "daily_audio_url": null,
+  "articles": [
+    {
+      "id": "sample0000000001",
+      "title_fa": "این یک نمونه‌ی خبر است",
+      "title_en": "This is a sample article",
+      "source": "Persian AI Pulse",
+      "category": "Meta",
+      "importance_score": 5,
+      "summary_fa": "این یک رکورد نمونه است که تا پیش از اولین اجرای پایپ‌لاین، نمایش سایت را نشان می‌دهد.",
+      "why_it_matters": "بعد از اولین اجرای GitHub Actions، این فایل با اخبار واقعی جایگزین می‌شود.",
+      "original_url": "https://github.com/hanyehkhl/HooshNews",
+      "tags": ["sample"],
+      "published_at": "2026-09-11T06:00:00Z"
+    }
+  ]
+}

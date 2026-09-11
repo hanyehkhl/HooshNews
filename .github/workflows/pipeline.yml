@@ -1,0 +1,84 @@
+name: Daily digest pipeline
+
+on:
+  schedule:
+    # 06:00 UTC daily. GitHub may delay scheduled runs under load; the
+    # pipeline is idempotent per calendar day (see JsonStore.upsert_day), so
+    # a late or double-triggered run never duplicates data.
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+
+# Serializes runs so two overlapping pipeline executions can never race to
+# commit the same data files — a concurrency conflict called out explicitly
+# during the architecture review. We do NOT cancel-in-progress: a run that's
+# already publishing should finish rather than be killed mid-commit.
+concurrency:
+  group: persian-ai-pulse-pipeline
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  PAP_LLM_API_KEY: ${{ secrets.PAP_LLM_API_KEY }}
+  PAP_LLM_BASE_URL: ${{ vars.PAP_LLM_BASE_URL || 'https://api.openai.com/v1' }}
+  PAP_LLM_MODEL: ${{ vars.PAP_LLM_MODEL || 'gpt-4o-mini' }}
+  PAP_TG_PUBLISH_BOT_TOKEN: ${{ secrets.PAP_TG_PUBLISH_BOT_TOKEN }}
+  PAP_TG_PUBLISH_CHAT_ID: ${{ secrets.PAP_TG_PUBLISH_CHAT_ID }}
+  PAP_TG_INGEST_API_ID: ${{ secrets.PAP_TG_INGEST_API_ID }}
+  PAP_TG_INGEST_API_HASH: ${{ secrets.PAP_TG_INGEST_API_HASH }}
+  PAP_TG_INGEST_SESSION_STRING: ${{ secrets.PAP_TG_INGEST_SESSION_STRING }}
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Install backend package
+        working-directory: backend
+        run: pip install -e ".[intelligence,tts,telegram]"
+
+      - name: Ingest
+        working-directory: backend
+        run: pap ingest --config config/sources.json
+
+      - name: Process (dedup + Persian summarize + rank)
+        working-directory: backend
+        run: pap process
+
+      - name: Publish site data (+ audio digest)
+        working-directory: backend
+        run: pap publish-site --with-audio
+
+      - name: Commit and push published data
+        run: |
+          git config user.name "persian-ai-pulse-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add frontend/public/data/ frontend/public/media/
+          if git diff --cached --quiet; then
+            echo "No changes to publish."
+          else
+            git commit -m "chore: publish digest for $(date -u +%F)"
+            git push
+          fi
+
+      - name: Publish to Telegram
+        working-directory: backend
+        run: pap publish-telegram
+
+      - name: Notify admin on failure
+        if: failure()
+        working-directory: backend
+        run: python scripts/notify_failure.py "Pipeline run failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

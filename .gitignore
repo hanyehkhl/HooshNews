@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pipeline_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
